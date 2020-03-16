@@ -1,0 +1,63 @@
+version: "3.5"
+
+services:
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_DB=oauth2_app
+      - POSTGRES_PASSWORD=nicolas2011
+    container_name: postgres
+    networks:
+      - web
+
+  authorizationserver:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./OauthSecurityServer/Dockerfile
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    ports:
+      - 8081:8081
+    container_name: authorizationserver
+    depends_on:
+      - postgres
+    networks:
+      - web
+
+  resourceserver:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./OauthResourseServer/Dockerfile
+    environment:
+      - TZ=America/Argentina/Buenos_Aires
+    ports:
+      - 8082:8082
+    container_name: resourceserver
+    depends_on:
+      - postgres
+      - authorizationserver
+    networks:
+      - web
+
+  portainer:
+    image: portainer/portainer
+    restart: always
+    ports:
+      - 9000:9000
+      - 8000:8000
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+      - ./certificates:/certs
+    container_name: portainerLocal
+
+volumes:
+  portainer_data:
+networks:
+  web:
+    external: true
